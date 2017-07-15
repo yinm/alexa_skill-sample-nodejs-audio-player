@@ -116,5 +116,39 @@ const stateHandlers = {
     'NextCommandIssued': function() { controller.playNext.call(this) },
     'PreviousCommandIssued': function() { controller.playPrevious.call(this) }
   }),
-
+  resumeDecisionModeIntentHandlers: Alexa.CreateStateHandler(constants.states.RESUME_DECISION_MODE, {
+    'LaunchRequest': function() {
+      const message = 'You were listening to ' + audioData[this.attributes['playOrder'][this.attributes['index']]].title +
+          ' Would you like to resume?';
+      const reprompt = 'You can say yes to resume or no to play from the top.';
+      this.emit(':responseReady');
+    },
+    'AMAZON.YesIntent': function() { controller.play.call(this) },
+    'AMAZON.NoIntent': function() { controller.reset.call(this) },
+    'AMAZON.HelpIntent': function() {
+      const message = 'You were listening to ' + audioData[this.attributes['index']].title +
+          ' Would you like to resume?';
+      const reprompt = 'You can say yes to resume or no to play from the top.';
+      this.response.speak(message).listen(reprompt);
+      this.emit(':responseReady');
+    },
+    'AMAZON.StopIntent': function() {
+      const message = 'Good bye.';
+      this.response.speak(message);
+      this.emit(':responseReady');
+    },
+    'AMAZON.CancelIntent': function() {
+      const message = 'Good bye.';
+      this.response.speak(message);
+      this.emit(':responseReady');
+    },
+    'SessionEndedReqest': function() {
+      // No session ended logic
+    },
+    'Unhandled': function() {
+      const message = 'Sorry, this is not a valid command. Please say help to hear what you can say.';
+      this.response.speak(message).listen(message);
+      this.emit(':responseReady');
+    }
+  })
 };
