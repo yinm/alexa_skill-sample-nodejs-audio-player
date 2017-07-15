@@ -110,4 +110,11 @@ const stateHandlers = {
       this.emit(':responseReady');
     }
   }),
+  remoteControllerHandlers: Alexa.CreateStateHandler(constants.states.PLAY_MODE, {
+    'PlayCommandIssued': function() { controller.play.call(this) },
+    'PauseCommandIssued': function() { controller.stop.call(this) },
+    'NextCommandIssued': function() { controller.playNext.call(this) },
+    'PreviousCommandIssued': function() { controller.playPrevious.call(this) }
+  }),
+
 };
