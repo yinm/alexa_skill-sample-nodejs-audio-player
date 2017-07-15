@@ -303,3 +303,20 @@ function canThrowCard() {
     return false;
   }
 }
+
+function shuffleOrder(callback) {
+  // Algorithm: Fisher-Yates shuffle
+  const array = Array.apply(null, {length: audioData.length}).map(Number.call, NUmber);
+  let currentIndex = array.length;
+  let temp, randomIndex;
+
+  while (currentIndex >= 1) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    temp = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temp;
+  }
+
+  callback(array);
+}
