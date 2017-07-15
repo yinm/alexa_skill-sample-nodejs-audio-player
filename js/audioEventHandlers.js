@@ -60,3 +60,17 @@ const audioEventHandlers = Alexa.CreateStateHandler(constants.states.PLAY_MODE, 
 });
 
 module.exports = audioEventHandlers;
+
+function getToken() {
+  // Extracting token received in the request.
+  return this.event.request.token;
+}
+
+function getIndex() {
+  const tokenValue = parseInt(this.event.request.token);
+  return this.attributes['playOrder'].indexOf(tokenValue);
+}
+
+function getOffsetInMilliseconds() {
+  return this.event.request.offsetInMilliseconds;
+}
