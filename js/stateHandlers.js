@@ -292,3 +292,14 @@ const controller = function() {
   }
 }();
 
+function canThrowCard() {
+  if (
+      this.event.request.type === 'IntentRequest'
+   && this.attributes['playbackIndexChanged']
+  ) {
+    this.attributes['playbackIndexChanged'] = false;
+    return true;
+  } else {
+    return false;
+  }
+}
