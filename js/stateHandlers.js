@@ -155,4 +155,140 @@ const stateHandlers = {
 
 module.exports = stateHandlers;
 
+const controller = function() {
+  return {
+    play: function() {
+      this.handler.state = constants.states.PLAY_MODE;
+
+      if (this.attributes['playbackFinished']) {
+        // Reset to top of the playlist when reached end.
+        this.attributes['index'] = 0;
+        this.attributes['offsetInMilliseconds'] = 0;
+        this.attributes['playbackIndexChanged'] = true;
+        this.attributes['playbackFinished'] = false;
+      }
+
+      const token = String(this.attributes['playOrder'][this.attributes['index']]);
+      const playBehavior = 'REPLACE_ALL';
+      const podcast = audioData[this.attributes['playOrder'][this.attributes['index']]];
+      const offsetInMilliseconds = this.attributes['offsetInMilliseconds'];
+
+      // Since play behavior is REPLACE_ALL, enqueuedToken attribute need to be set to null.
+      this.attributes['enqueuedToken'] = null;
+
+      if (canThrowCard.call(this)) {
+        const cardTitle = 'Playing ' + podcast.title;
+        const cardContent = 'Playing ' + podcast.title;
+        this.response.cardRenderer(cardTitle, cardContent, null);
+      }
+
+      this.response.audioPlayerPlay(playBehavior, podcast.url, token, null, offsetInMilliseconds);
+      this.emit(':responseReady');
+    },
+    stop: function() {
+      this.response.audioPlayerStop();
+      this.emit(':responseReady');
+    },
+    playNext: function() {
+      let index = this.attributes['index'];
+      index += 1;
+
+      // Check for last audio file.
+      if (index === audioData.length) {
+        if (this.attributes['loop']) {
+          index = 0;
+        } else {
+          // Reached at the end. Thus reset state to start mode and stop playing.
+          this.handler.state = constants.states.START_MODE;
+
+          const message = 'You have reached at the end or the playlist.';
+          this.response.speak(mesasge).audioPlayerStop();
+          return this.emit(':responseReady');
+        }
+      }
+
+      // Set values to attributes.
+      this.attributes['index'] = index;
+      this.attributes['offsetInMilliseconds'] = 0;
+      this.attributes['playbackIndexChanged'] = true;
+
+      controller.play.call(this);
+    },
+    playPrevious: function() {
+      let index = this.attributes['index'];
+      index -= 1;
+
+      // Check for last audio file.
+      if (index === -1) {
+        if (this.attributes['loop']) {
+          index = audioData.length - 1;
+        } else {
+          // Reached at the end. Thus reset state to start mode and stop playing.
+          this.handler.state = constants.states.START_MODE;
+
+          const message = 'You have reached at the start of the playlist.';
+          this.response.speak(message).audioPlayerStop();
+          return this.emit(':responseReady');
+        }
+      }
+
+      // Set values to attributes
+      this.attributes['index'] = index;
+      this.attributes['offsetInMilliseconds'] = 0;
+      this.attributes['playbackIndexChanged'] = true;
+
+      controller.play.call(this);
+    },
+    loopOn: function() {
+      // Turn on loop play.
+      this.attributes['loop'] = true;
+      const message = 'Loop turned on.';
+      this.response.speak(message);
+      this.emit(':responseReady');
+    },
+    loopOff: function() {
+      // Turn off looping
+      this.attributes['loop'] = false;
+      const message = 'Loop turned off.';
+      this.response.speak(message);
+      this.emit(':responseReady');
+    },
+    shuffleOn: function() {
+      // Turn on shuffle play.
+      this.attributes['shuffle'] = true;
+      shuffleOrder((newOrder) => {
+        // Play order have been shuffled. Re-initializing indices and playing first song in shuffled order.
+        this.attributes['playOrder'] = newOrder;
+        this.attributes['index'] = 0;
+        this.attributes['offsetInMilliseconds'] = 0;
+        this.attributes['playbackIndexChanged'] = true;
+        controller.play.call(this);
+      });
+    },
+    shuffleOff: function() {
+      // Turn off shuffle play.
+      if (this.attributes['shuffle']) {
+        this.attributes['shuffle'] = false;
+
+        // Although changing index, no change in audio file being played as the change is to account for reordering playOrder
+        this.attributes['index'] = this.attributes['playOrder'][this.attributes['index']];
+        this.attributes['playOrder'] = Array.apply(null, {length: audioData.length}).map(Number.call, Number);
+      }
+
+      controller.play.call(this);
+    },
+    startOver: function() {
+      // Start over the current audio file.
+      this.attributes['offsetInMilliseconds'] = 0;
+      controller.play.call(this);
+    },
+    reset: function() {
+      // Reset to top of the playlist.
+      this.attributes['index'] = 0;
+      this.attributes['offsetInMilliseconds'] = 0;
+      this.attributes['playbackIndexChanged'] = true;
+      controller.play.call(this);
+    }
+  }
+}();
 
